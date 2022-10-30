@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Chess</string>
+
+    <string name="king_light">King light</string>
+    <string name="queen_light">Queen light</string>
+    <string name="rook_light">Rook light</string>
+    <string name="bishop_light">Bishop light</string>
+    <string name="knight_light">Knight light</string>
+    <string name="pawn_light">Pawn light</string>
+    <string name="king_dark">King dark</string>
+    <string name="queen_dark">Queen dark</string>
+    <string name="rook_dark">Rook dark</string>
+    <string name="bishop_dark">Bishop dark</string>
+    <string name="knight_dark">Knight dark</string>
+    <string name="pawn_dark">Pawn dark</string>
 </resources>
