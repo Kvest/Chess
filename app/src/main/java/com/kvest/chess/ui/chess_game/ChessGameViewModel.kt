@@ -63,11 +63,12 @@ class ChessGameViewModel : ViewModel() {
 
     private fun generateBoard(board: Board?, calculatePiece: (Square) -> PieceType?): BoardModel {
         val legalMove = board?.legalMoves().orEmpty()
+        val squares = Square.values()
 
-        val rows = (0 until BOARD_SIZE).map { rowId ->
+        val rows = (BOARD_SIZE - 1 downTo 0).map { rowId ->
             BoardRow(
                 (0 until BOARD_SIZE).map { columnId ->
-                    val square = Square.values()[rowId * BOARD_SIZE + columnId]
+                    val square = squares[rowId * BOARD_SIZE + columnId]
                     val isForMove = legalMove.contains(Move(selectedCell, square))
 
                     Cell(
