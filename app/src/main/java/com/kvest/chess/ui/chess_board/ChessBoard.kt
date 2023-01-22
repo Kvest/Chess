@@ -16,6 +16,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.github.bhlangonijr.chesslib.Square
 import com.kvest.chess.R
 import com.kvest.chess.model.*
@@ -57,18 +58,18 @@ private fun ChessBoardCell(
     Box(
         modifier = modifier
             .background(cellColor)
-            .width(42.dp)
-            .height(42.dp)
+            .size(42.dp)
             .clickable {
                 onCellClicked(cell.square)
             },
         contentAlignment = Alignment.Center
     ) {
         if (cell.isSelected) {
-            Surface(
-                color = Color.Yellow.copy(alpha = 0.6f),
-                modifier = Modifier.fillMaxSize()
-            ) {}
+            Spacer(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Yellow.copy(alpha = 0.6f))
+            )
         }
         if (cell.isForMove) {
             Surface(

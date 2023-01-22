@@ -13,4 +13,6 @@
     <string name="bishop_dark">Bishop dark</string>
     <string name="knight_dark">Knight dark</string>
     <string name="pawn_dark">Pawn dark</string>
+
+    <string name="moves_title">Moves:</string>
 </resources>

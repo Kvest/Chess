@@ -3,10 +3,13 @@ package com.kvest.chess.ui.chess_game
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.bhlangonijr.chesslib.Board
+import com.github.bhlangonijr.chesslib.MoveBackup
 import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import com.kvest.chess.model.*
+import com.kvest.chess.ui.utils.isLongCastleMove
+import com.kvest.chess.ui.utils.isShortCastleMove
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,8 +20,13 @@ import kotlinx.coroutines.withContext
 private const val BOARD_SIZE = 8
 
 class ChessGameViewModel : ViewModel() {
-    private val _game = MutableStateFlow(generateEmptyBoard())
-    val game: StateFlow<BoardModel> = _game.asStateFlow()
+    private val _uiState = MutableStateFlow(
+        ChessGameUIState(
+            board = generateEmptyBoard(),
+            history = emptyList()
+        )
+    )
+    val uiState: StateFlow<ChessGameUIState> = _uiState.asStateFlow()
 
     private val board by lazy { Board() }
     private var selectedCell: Square? = null
@@ -56,20 +64,40 @@ class ChessGameViewModel : ViewModel() {
             board.getPiece(square).toPieceType()
         }
 
-        _game.tryEmit(currentBoard)
+        val currentHistory = board
+            .backup
+            .chunked(2)
+            .mapIndexed { index, moves ->
+                "${index + 1}. ${moves[0].toHistoryString()} ${
+                    moves.getOrNull(1).toHistoryString()
+                }"
+            }
+
+        _uiState.tryEmit(
+            ChessGameUIState(
+                board = currentBoard,
+                history = currentHistory
+            )
+        )
     }
 
     private fun generateEmptyBoard(): BoardModel = generateBoard(board = null) { _ -> null }
 
     private fun generateBoard(board: Board?, calculatePiece: (Square) -> PieceType?): BoardModel {
-        val legalMove = board?.legalMoves().orEmpty()
+        val squaresForMove = board
+            ?.legalMoves()
+            ?.filter { it.from == selectedCell }
+            ?.map { it.to }
+            ?.toSet()
+            .orEmpty()
+
         val squares = Square.values()
 
         val rows = (BOARD_SIZE - 1 downTo 0).map { rowId ->
             BoardRow(
                 (0 until BOARD_SIZE).map { columnId ->
                     val square = squares[rowId * BOARD_SIZE + columnId]
-                    val isForMove = legalMove.contains(Move(selectedCell, square))
+                    val isForMove = square in squaresForMove
 
                     Cell(
                         square = square,
@@ -83,6 +111,18 @@ class ChessGameViewModel : ViewModel() {
         }
 
         return BoardModel(rows)
+    }
+}
+
+private fun MoveBackup?.toHistoryString(): String {
+    if (this == null) {
+        return ""
+    }
+
+    return when {
+        this.isLongCastleMove() -> "0-0-0"
+        this.isShortCastleMove() -> "0-0"
+        else -> "${this.movingPiece.fanSymbol} ${this.move.from}-${this.move.to}"
     }
 }
 
