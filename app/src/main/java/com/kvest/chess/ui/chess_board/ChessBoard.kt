@@ -1,93 +1,181 @@
 package com.kvest.chess.ui.chess_board
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Surface
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import com.github.bhlangonijr.chesslib.Square
 import com.kvest.chess.R
-import com.kvest.chess.model.*
+import com.kvest.chess.model.ChessBoard
+import com.kvest.chess.model.PieceType
 import com.kvest.chess.ui.theme.Copper
+import kotlin.math.roundToInt
 
 @Composable
 fun ChessBoard(
-    board: BoardModel,
+    chessBoard: ChessBoard,
+    pieces: List<PieceOnSquare>,
+    selectedSquare: Square?,
+    squaresForMove: List<Square>,
+    squareSize: Dp,
     onCellClicked: (Square) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier
-            .border(2.dp, color = Color.Black)
-    ) {
-        Column {
-            board.rows.map { row ->
-                Row {
-                    row.cells.map { cell ->
-                        ChessBoardCell(cell, onCellClicked)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ChessBoardCell(
-    cell: Cell,
-    onCellClicked: (Square) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val cellColor = when (cell.type) {
-        CellType.DARK -> Copper
-        CellType.LIGHT -> Color.White
+    val squareSizePx = with(LocalDensity.current) {
+        squareSize.toPx()
     }
 
     Box(
         modifier = modifier
-            .background(cellColor)
-            .size(42.dp)
-            .clickable {
-                onCellClicked(cell.square)
-            },
-        contentAlignment = Alignment.Center
+            .size(squareSize * 8)
+            .drawWithCache {
+                val size = Size(squareSizePx, squareSizePx)
+
+                onDrawBehind {
+                    drawSquares(chessBoard, squareSizePx, size)
+                    drawSelectedSquare(chessBoard, selectedSquare, squareSizePx, size)
+                    drawSquaresForPossibleMoves(chessBoard, squaresForMove, squareSizePx)
+                }
+            }
+            .border(2.dp, color = Color.Black)
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    val row = (offset.y / squareSizePx).toInt()
+                    val column = (offset.x / squareSizePx).toInt()
+                    val square = chessBoard[row, column]
+                    onCellClicked(square)
+                }
+            }
     ) {
-        if (cell.isSelected) {
-            Spacer(
+        pieces.forEach {
+            val row = chessBoard.getRow(it.square)
+            val column = chessBoard.getColumn(it.square)
+
+            Piece(
+                pieceType = it.pieceType,
                 modifier = Modifier
-                    .matchParentSize()
-                    .background(Color.Yellow.copy(alpha = 0.6f))
+                    .offset {
+                        IntOffset(
+                            x = (column * squareSizePx).roundToInt(),
+                            y = (row * squareSizePx).roundToInt(),
+                        )
+                    }
+                    .size(squareSize)
             )
         }
-        if (cell.isForMove) {
-            Surface(
-                color = Color.Black.copy(alpha = 0.3f),
-                shape = CircleShape,
-                modifier = Modifier
-                    .padding(4.dp)
-                    .fillMaxSize()
-            ) {}
-        }
-        if (cell.piece != null) {
-            Image(
-                modifier = Modifier.size(48.dp),
-                contentScale = ContentScale.Fit,
-                painter = painterResource(getPieceTypeImageRes(cell.piece)),
-                contentDescription = stringResource(getPieceTypeDescriptionRes(cell.piece))
+    }
+}
+
+private fun DrawScope.drawSquares(chessBoard: ChessBoard, squareSizePx: Float, size: Size) {
+    for (row in 0 until chessBoard.size) {
+        for (column in 0 until chessBoard.size) {
+            drawRect(
+                color = if (chessBoard[row, column].isLightSquare) Color.White else Copper,
+                topLeft = Offset(x = column * squareSizePx, y = row * squareSizePx),
+                size = size
             )
         }
+    }
+}
+
+private fun DrawScope.drawSelectedSquare(
+    chessBoard: ChessBoard,
+    selectedSquare: Square?,
+    squareSizePx: Float,
+    size: Size,
+) {
+    if (selectedSquare != null) {
+        val row = chessBoard.getRow(selectedSquare)
+        val column = chessBoard.getColumn(selectedSquare)
+
+        drawRect(
+            color = Color.Yellow.copy(alpha = 0.6f),
+            topLeft = Offset(x = column * squareSizePx, y = row * squareSizePx),
+            size = size
+        )
+    }
+}
+
+private fun DrawScope.drawSquaresForPossibleMoves(
+    chessBoard: ChessBoard,
+    squaresForMove: List<Square>,
+    squareSizePx: Float,
+) {
+    squaresForMove.forEach { square ->
+        val row = chessBoard.getRow(square)
+        val column = chessBoard.getColumn(square)
+
+        drawCircle(
+            color = Color.Black.copy(alpha = 0.3f),
+            center = Offset(
+                x = column * squareSizePx + squareSizePx / 2,
+                y = row * squareSizePx + squareSizePx / 2
+            ),
+            radius = (squareSizePx) / 3
+        )
+    }
+}
+
+@Composable
+fun Piece(pieceType: PieceType, modifier: Modifier = Modifier) {
+    Image(
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+        painter = painterResource(getPieceTypeImageRes(pieceType)),
+        contentDescription = stringResource(getPieceTypeDescriptionRes(pieceType))
+    )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0000FF)
+@Composable
+fun ChessBoardPreview() {
+    ChessBoard(
+        chessBoard = ChessBoard(),
+        pieces = listOf(
+            PieceOnSquare(PieceType.PAWN_LIGHT, Square.A2),
+            PieceOnSquare(PieceType.PAWN_DARK, Square.A7),
+            PieceOnSquare(PieceType.ROOK_DARK, Square.A8),
+            PieceOnSquare(PieceType.ROOK_LIGHT, Square.A1),
+            PieceOnSquare(PieceType.KNIGHT_LIGHT, Square.G1),
+        ),
+        selectedSquare = Square.C2,
+        squaresForMove = listOf(Square.A1, Square.A3, Square.B4, Square.D4, Square.E2),
+        squareSize = 48.dp,
+        onCellClicked = {}
+    )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0000FF)
+@Composable
+fun PiecePreview() {
+    Row {
+        Piece(
+            pieceType = PieceType.BISHOP_DARK,
+            modifier = Modifier.size(48.dp)
+        )
+        Piece(
+            pieceType = PieceType.PAWN_LIGHT,
+            modifier = Modifier.size(48.dp)
+        )
     }
 }
 
@@ -122,68 +210,3 @@ private fun getPieceTypeDescriptionRes(pieceType: PieceType): Int =
         PieceType.KNIGHT_DARK -> R.string.knight_dark
         PieceType.PAWN_DARK -> R.string.pawn_dark
     }
-
-@Preview
-@Composable
-fun ChessBoardPreview() {
-    val rows = (0..7).map { rowId ->
-        BoardRow(
-            (0..7).map { columnId ->
-                Cell(
-                    Square.A1,
-                    if ((rowId + columnId) % 2 == 0) CellType.LIGHT else CellType.DARK,
-                    piece = null,
-                    isSelected = false,
-                    isForMove = false,
-                )
-            }
-        )
-    }
-
-    ChessBoard(
-        BoardModel(rows),
-        {}
-    )
-}
-
-@Preview
-@Composable
-fun ChessBoardCellPreview() {
-    Row {
-        ChessBoardCell(
-            Cell(
-                Square.A1,
-                CellType.DARK,
-                PieceType.BISHOP_DARK,
-                isSelected = true,
-                isForMove = false
-            ), {})
-        ChessBoardCell(
-            Cell(
-                Square.A1,
-                CellType.LIGHT,
-                PieceType.KING_LIGHT,
-                isSelected = true,
-                isForMove = false
-            ), {})
-        ChessBoardCell(
-            Cell(Square.A1, CellType.DARK, null, isSelected = false, isForMove = true),
-            {})
-        ChessBoardCell(
-            Cell(Square.A1, CellType.LIGHT, null, isSelected = false, isForMove = false),
-            {})
-    }
-}
-
-@Preview
-@Composable
-fun ChessBoardAllPiecesPreview() {
-    Row {
-        PieceType.values().map {
-            ChessBoardCell(
-                Cell(Square.A1, CellType.DARK, it, isSelected = false, isForMove = false),
-                {}
-            )
-        }
-    }
-}
