@@ -1,5 +1,6 @@
 package com.kvest.chess.ui.chess_game
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.bhlangonijr.chesslib.Board
@@ -8,6 +9,7 @@ import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import com.kvest.chess.ext.toPieceType
 import com.kvest.chess.model.ChessBoard
+import com.kvest.chess.model.PieceType
 import com.kvest.chess.ui.chess_board.PieceOnSquare
 import com.kvest.chess.ui.utils.isLongCastleMove
 import com.kvest.chess.ui.utils.isShortCastleMove
@@ -15,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -22,13 +25,14 @@ class ChessGameViewModel : ViewModel() {
     private val chessBoard = ChessBoard()
     private val board by lazy { Board() }
     private var selectedCell: Square? = null
+    private var pieceId = 0
 
     private val _uiState = MutableStateFlow(
         ChessGameUIState(
             board = chessBoard,
             pieces = emptyList(),
             selectedSquare = selectedCell,
-            squaresForMove = emptyList(),
+            squaresForMove = emptySet(),
             history = emptyList(),
         )
     )
@@ -63,28 +67,32 @@ class ChessGameViewModel : ViewModel() {
     }
 
     private fun emitCurrentUI() {
-        val pieces = Square.values()
-            .mapNotNull { square ->
-                board.getPiece(square)
-                    .toPieceType()
-                    ?.let { pieceType -> PieceOnSquare(pieceType, square) }
-            }
+        _uiState.update { oldUiState ->
+            val pieces = calculatePiecesOnSquares(oldUiState.pieces)
 
-        val squaresForMove = board
-            .legalMoves()
-            .filter { it.from == selectedCell }
-            .map { it.to }
+            val squaresForMove = board
+                .legalMoves()
+                .filter { it.from == selectedCell }
+                .let {
+                    Log.d("DEBUG_TAG", "squaresForMove: $it")
+                    it
+                }
+                .map { it.to }
+                .toSet()
 
-        val currentHistory = board
-            .backup
-            .chunked(2)
-            .mapIndexed { index, moves ->
-                "${index + 1}. ${moves[0].toHistoryString()} ${
-                    moves.getOrNull(1).toHistoryString()
-                }"
-            }
+            val currentHistory = board
+                .backup
+                .chunked(2)
+                .mapIndexed { index, moves ->
+                    "${index + 1}. ${moves[0].toHistoryString()} ${
+                        moves.getOrNull(1).toHistoryString()
+                    }"
+                }
 
-        _uiState.tryEmit(
+            val fen = board.getFen(false)
+            Log.d("DEBUG_TAG", "fen: $fen")
+
+
             ChessGameUIState(
                 board = chessBoard,
                 pieces = pieces,
@@ -92,7 +100,50 @@ class ChessGameViewModel : ViewModel() {
                 squaresForMove = squaresForMove,
                 history = currentHistory
             )
-        )
+        }
+
+    }
+
+
+    private fun calculatePiecesOnSquares(pieces: List<PieceOnSquare>): List<PieceOnSquare> {
+        //initial calculation
+        if (pieces.isEmpty()) {
+            return Square.values()
+                .mapNotNull { square ->
+                    board.getPiece(square)
+                        .toPieceType()
+                        ?.let { pieceType -> PieceOnSquare(pieceId++, pieceType, square) }
+                }
+        }
+
+        val oldPiecesMap = pieces.associateBy { it.square }.toMutableMap()
+        val notAddedPieces = mutableMapOf<Square, PieceType>()
+
+        return buildList {
+            //Add all not moved pieces to the list and create the map of pieces that were not found on the old squares
+            Square.values()
+                .forEach { square ->
+                    val pieceType = board.getPiece(square).toPieceType()
+
+                    if (pieceType != null) {
+                        val oldPiece = oldPiecesMap[square]
+                        if (oldPiece?.pieceType == pieceType) {
+                            add(oldPiece)
+
+                            oldPiecesMap.remove(square)
+                        } else {
+                            notAddedPieces[square] = pieceType
+                        }
+                    }
+                }
+
+                notAddedPieces.forEach { (square, pieceType) ->
+                    val id = oldPiecesMap.values.find { it.pieceType == pieceType }?.id
+                    requireNotNull(id) //TODO - will crash in case of promotion
+
+                    add(PieceOnSquare(id, pieceType, square))
+                }
+        }
     }
 }
 

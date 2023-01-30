@@ -1,5 +1,6 @@
 package com.kvest.chess.ui.chess_board
 
+import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -35,7 +37,7 @@ fun ChessBoard(
     chessBoard: ChessBoard,
     pieces: List<PieceOnSquare>,
     selectedSquare: Square?,
-    squaresForMove: List<Square>,
+    squaresForMove: Set<Square>,
     squareSize: Dp,
     onCellClicked: (Square) -> Unit,
     modifier: Modifier = Modifier
@@ -66,21 +68,25 @@ fun ChessBoard(
                 }
             }
     ) {
-        pieces.forEach {
-            val row = chessBoard.getRow(it.square)
-            val column = chessBoard.getColumn(it.square)
+        pieces.forEach { piece ->
+            key(piece.id) {
+                val row = chessBoard.getRow(piece.square)
+                val column = chessBoard.getColumn(piece.square)
 
-            Piece(
-                pieceType = it.pieceType,
-                modifier = Modifier
-                    .offset {
-                        IntOffset(
-                            x = (column * squareSizePx).roundToInt(),
-                            y = (row * squareSizePx).roundToInt(),
-                        )
-                    }
-                    .size(squareSize)
-            )
+                val offset = animateIntOffsetAsState(
+                    targetValue = IntOffset(
+                        x = (column * squareSizePx).roundToInt(),
+                        y = (row * squareSizePx).roundToInt(),
+                    )
+                )
+
+                Piece(
+                    pieceType = piece.pieceType,
+                    modifier = Modifier
+                        .offset { offset.value }
+                        .size(squareSize)
+                )
+            }
         }
     }
 }
@@ -117,7 +123,7 @@ private fun DrawScope.drawSelectedSquare(
 
 private fun DrawScope.drawSquaresForPossibleMoves(
     chessBoard: ChessBoard,
-    squaresForMove: List<Square>,
+    squaresForMove: Set<Square>,
     squareSizePx: Float,
 ) {
     squaresForMove.forEach { square ->
@@ -151,14 +157,14 @@ fun ChessBoardPreview() {
     ChessBoard(
         chessBoard = ChessBoard(),
         pieces = listOf(
-            PieceOnSquare(PieceType.PAWN_LIGHT, Square.A2),
-            PieceOnSquare(PieceType.PAWN_DARK, Square.A7),
-            PieceOnSquare(PieceType.ROOK_DARK, Square.A8),
-            PieceOnSquare(PieceType.ROOK_LIGHT, Square.A1),
-            PieceOnSquare(PieceType.KNIGHT_LIGHT, Square.G1),
+            PieceOnSquare(0, PieceType.PAWN_LIGHT, Square.A2),
+            PieceOnSquare(1, PieceType.PAWN_DARK, Square.A7),
+            PieceOnSquare(2, PieceType.ROOK_DARK, Square.A8),
+            PieceOnSquare(3, PieceType.ROOK_LIGHT, Square.A1),
+            PieceOnSquare(4, PieceType.KNIGHT_LIGHT, Square.G1),
         ),
         selectedSquare = Square.C2,
-        squaresForMove = listOf(Square.A1, Square.A3, Square.B4, Square.D4, Square.E2),
+        squaresForMove = setOf(Square.A1, Square.A3, Square.B4, Square.D4, Square.E2),
         squareSize = 48.dp,
         onCellClicked = {}
     )

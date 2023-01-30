@@ -4,6 +4,7 @@ import com.github.bhlangonijr.chesslib.Square
 import com.kvest.chess.model.PieceType
 
 data class PieceOnSquare(
+    val id: Int,
     val pieceType: PieceType,
     val square: Square,
 )

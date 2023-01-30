@@ -8,6 +8,6 @@ data class ChessGameUIState(
     val board: ChessBoard,
     val pieces: List<PieceOnSquare>,
     val selectedSquare: Square?,
-    val squaresForMove: List<Square>,
+    val squaresForMove: Set<Square>,
     val history: List<String>
 )
