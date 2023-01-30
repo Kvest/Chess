@@ -14,10 +14,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kvest.chess.R
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.immutableListOf
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun GameHistory(
-    history: List<String>,
+    history: ImmutableList<String>,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
@@ -63,7 +66,7 @@ fun GameHistoryItem(
 @Composable
 fun GameHistoryPreview() {
     GameHistory(
-        listOf(
+        persistentListOf(
             "1. ♙e2-e4 ♟e7-e5",
             "2. ♘g1-f3 ♞g8-f6",
             "3. ♗f1-c4"

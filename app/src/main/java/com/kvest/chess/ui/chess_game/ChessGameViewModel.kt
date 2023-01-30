@@ -1,6 +1,5 @@
 package com.kvest.chess.ui.chess_game
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.bhlangonijr.chesslib.Board
@@ -13,6 +12,8 @@ import com.kvest.chess.model.PieceType
 import com.kvest.chess.ui.chess_board.PieceOnSquare
 import com.kvest.chess.ui.utils.isLongCastleMove
 import com.kvest.chess.ui.utils.isShortCastleMove
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,10 +31,10 @@ class ChessGameViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(
         ChessGameUIState(
             board = chessBoard,
-            pieces = emptyList(),
+            pieces = emptyList<PieceOnSquare>().toImmutableList(),
             selectedSquare = selectedCell,
-            squaresForMove = emptySet(),
-            history = emptyList(),
+            squaresForMove = emptySet<Square>().toImmutableSet(),
+            history = emptyList<String>().toImmutableList(),
         )
     )
     val uiState: StateFlow<ChessGameUIState> = _uiState.asStateFlow()
@@ -73,32 +74,22 @@ class ChessGameViewModel : ViewModel() {
             val squaresForMove = board
                 .legalMoves()
                 .filter { it.from == selectedCell }
-                .let {
-                    Log.d("DEBUG_TAG", "squaresForMove: $it")
-                    it
-                }
                 .map { it.to }
-                .toSet()
+                .toImmutableSet()
 
             val currentHistory = board
                 .backup
                 .chunked(2)
                 .mapIndexed { index, moves ->
-                    "${index + 1}. ${moves[0].toHistoryString()} ${
-                        moves.getOrNull(1).toHistoryString()
-                    }"
+                    "${index + 1}. ${moves[0].toHistoryString()} ${moves.getOrNull(1).toHistoryString()}"
                 }
-
-            val fen = board.getFen(false)
-            Log.d("DEBUG_TAG", "fen: $fen")
-
 
             ChessGameUIState(
                 board = chessBoard,
-                pieces = pieces,
+                pieces = pieces.toImmutableList(),
                 selectedSquare = selectedCell,
                 squaresForMove = squaresForMove,
-                history = currentHistory
+                history = currentHistory.toImmutableList()
             )
         }
 

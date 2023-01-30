@@ -30,14 +30,18 @@ import com.kvest.chess.R
 import com.kvest.chess.model.ChessBoard
 import com.kvest.chess.model.PieceType
 import com.kvest.chess.ui.theme.Copper
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlin.math.roundToInt
 
 @Composable
 fun ChessBoard(
     chessBoard: ChessBoard,
-    pieces: List<PieceOnSquare>,
+    pieces: ImmutableList<PieceOnSquare>,
     selectedSquare: Square?,
-    squaresForMove: Set<Square>,
+    squaresForMove: ImmutableSet<Square>,
     squareSize: Dp,
     onCellClicked: (Square) -> Unit,
     modifier: Modifier = Modifier
@@ -156,7 +160,7 @@ fun Piece(pieceType: PieceType, modifier: Modifier = Modifier) {
 fun ChessBoardPreview() {
     ChessBoard(
         chessBoard = ChessBoard(),
-        pieces = listOf(
+        pieces = persistentListOf(
             PieceOnSquare(0, PieceType.PAWN_LIGHT, Square.A2),
             PieceOnSquare(1, PieceType.PAWN_DARK, Square.A7),
             PieceOnSquare(2, PieceType.ROOK_DARK, Square.A8),
@@ -164,7 +168,7 @@ fun ChessBoardPreview() {
             PieceOnSquare(4, PieceType.KNIGHT_LIGHT, Square.G1),
         ),
         selectedSquare = Square.C2,
-        squaresForMove = setOf(Square.A1, Square.A3, Square.B4, Square.D4, Square.E2),
+        squaresForMove = persistentSetOf(Square.A1, Square.A3, Square.B4, Square.D4, Square.E2),
         squareSize = 48.dp,
         onCellClicked = {}
     )

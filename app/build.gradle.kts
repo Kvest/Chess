@@ -68,6 +68,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewModelCompose)
     implementation(libs.androidx.lifecycle.runtimeCompose)
 
+    implementation(libs.kotlinx.collections.immutable)
+
     implementation(libs.chess)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
