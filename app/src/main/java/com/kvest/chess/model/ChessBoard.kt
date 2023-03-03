@@ -9,8 +9,9 @@ class ChessBoard {
         get() = BOARD_SIZE
 
     operator fun get(row: Int, column: Int): Square {
-        require(row >= 0 && row < BOARD_SIZE)
-        require(column >= 0 && column < BOARD_SIZE)
+        if ((row !in 0 until BOARD_SIZE) || (column !in 0 until BOARD_SIZE)) {
+            return Square.NONE
+        }
 
         return Square.values()[(size * size) - (row + 1) * size + column]
     }
