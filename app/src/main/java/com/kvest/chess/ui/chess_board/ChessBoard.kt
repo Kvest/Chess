@@ -1,16 +1,11 @@
 package com.kvest.chess.ui.chess_board
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.VectorConverter
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -18,28 +13,18 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import com.github.bhlangonijr.chesslib.Square
-import com.kvest.chess.R
 import com.kvest.chess.model.ChessBoard
 import com.kvest.chess.model.PieceType
 import com.kvest.chess.ui.theme.Copper
-import com.kvest.chess.ui.utils.toIntOffset
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 @Composable
 fun ChessBoard(
@@ -143,117 +128,6 @@ private fun DrawScope.drawSquaresForPossibleMoves(
     }
 }
 
-@Composable
-fun Piece(
-    piece: PieceOnSquare,
-    squareSize: Dp,
-    chessBoard: ChessBoard,
-    onTakePiece: (Square) -> Unit,
-    onReleasePiece: (Square) -> Unit
-) {
-    val squareSizePx = with(LocalDensity.current) {
-        squareSize.toPx()
-    }
-
-    val row = chessBoard.getRow(piece.square)
-    val column = chessBoard.getColumn(piece.square)
-
-    val x by rememberUpdatedState(column * squareSizePx)
-    val y by rememberUpdatedState(row * squareSizePx)
-    var zIndex by remember { mutableStateOf(0f) }
-
-    val offset = remember {
-        Animatable(
-            Offset(x = column * squareSizePx, y = row * squareSizePx),
-            Offset.VectorConverter
-        )
-    }
-
-    fun calculateSquare(): Square {
-        val row = ((offset.value.y + squareSizePx / 2) / squareSizePx).toInt()
-        val column = ((offset.value.x + squareSizePx / 2) / squareSizePx).toInt()
-        return chessBoard[row, column]
-    }
-
-    LaunchedEffect(key1 = x.roundToInt(), key2 = y.roundToInt()) {
-        offset.animateTo(Offset(x, y))
-    }
-
-    PieceImage(
-        pieceType = piece.pieceType,
-        modifier = Modifier
-            .offset { offset.value.toIntOffset() }
-            .zIndex(zIndex)
-            .size(squareSize)
-            .pointerInput(Unit) {
-                coroutineScope {
-                    detectDragGestures(
-                        onDragStart = {
-                            zIndex = 1f
-
-                            val square = calculateSquare()
-                            onTakePiece(square)
-                        },
-                        onDragEnd = {
-                            zIndex = 0f
-
-                            val square = calculateSquare()
-                            onReleasePiece(square)
-
-                            /**
-                                Note: This is ugly hack. Animate this piece to it's original position
-                                If the position of the piece will be changed by onReleasePiece then recomposion will happen,
-                                this animation will be canceled and this piece will be animated to the center of the square.
-                                If the move of this piece to the square is impossible - no recomposion will happen and
-                                this piece will be moved to the original position.
-                                This approach has potential bug - if the new state in onReleasePiece will be calculated too long -
-                                the user will see a wrong animation
-                             **/
-                            //if (square == pieceSquare) {
-                            launch {
-                                offset.animateTo(Offset(x, y))
-                            }
-                            //}
-                        },
-                        onDragCancel = {
-                            zIndex = 0f
-
-                            // Just move piece to it's original position
-                            launch {
-                                offset.animateTo(Offset(x, y))
-                            }
-                        }
-                    ) { change, dragAmount ->
-                        change.consume()
-
-                        launch {
-                            offset.snapTo(
-                                Offset(
-                                    x = offset.value.x + dragAmount.x,
-                                    y = offset.value.y + dragAmount.y,
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-
-    )
-}
-
-@Composable
-private fun PieceImage(
-    pieceType: PieceType,
-    modifier: Modifier,
-) {
-    Image(
-        modifier = modifier,
-        contentScale = ContentScale.Fit,
-        painter = painterResource(getPieceTypeImageRes(pieceType)),
-        contentDescription = stringResource(getPieceTypeDescriptionRes(pieceType))
-    )
-}
-
 @Preview(showBackground = true, backgroundColor = 0xFF0000FF)
 @Composable
 fun ChessBoardPreview() {
@@ -274,50 +148,3 @@ fun ChessBoardPreview() {
         onReleasePiece = {},
     )
 }
-
-@Preview(showBackground = true, backgroundColor = 0xFF0000FF)
-@Composable
-fun PiecePreview() {
-    Row {
-        PieceImage(
-            pieceType = PieceType.BISHOP_DARK,
-            modifier = Modifier.size(48.dp)
-        )
-        PieceImage(
-            pieceType = PieceType.PAWN_LIGHT,
-            modifier = Modifier.size(48.dp)
-        )
-    }
-}
-
-private fun getPieceTypeImageRes(pieceType: PieceType): Int =
-    when (pieceType) {
-        PieceType.KING_LIGHT -> R.drawable.king_light
-        PieceType.QUEEN_LIGHT -> R.drawable.queen_light
-        PieceType.ROOK_LIGHT -> R.drawable.rook_light
-        PieceType.BISHOP_LIGHT -> R.drawable.bishop_light
-        PieceType.KNIGHT_LIGHT -> R.drawable.knight_light
-        PieceType.PAWN_LIGHT -> R.drawable.pawn_light
-        PieceType.KING_DARK -> R.drawable.king_dark
-        PieceType.QUEEN_DARK -> R.drawable.queen_dark
-        PieceType.ROOK_DARK -> R.drawable.rook_dark
-        PieceType.BISHOP_DARK -> R.drawable.bishop_dark
-        PieceType.KNIGHT_DARK -> R.drawable.knight_dark
-        PieceType.PAWN_DARK -> R.drawable.pawn_dark
-    }
-
-private fun getPieceTypeDescriptionRes(pieceType: PieceType): Int =
-    when (pieceType) {
-        PieceType.KING_LIGHT -> R.string.king_light
-        PieceType.QUEEN_LIGHT -> R.string.queen_light
-        PieceType.ROOK_LIGHT -> R.string.rook_light
-        PieceType.BISHOP_LIGHT -> R.string.bishop_light
-        PieceType.KNIGHT_LIGHT -> R.string.knight_light
-        PieceType.PAWN_LIGHT -> R.string.pawn_light
-        PieceType.KING_DARK -> R.string.king_dark
-        PieceType.QUEEN_DARK -> R.string.queen_dark
-        PieceType.ROOK_DARK -> R.string.rook_dark
-        PieceType.BISHOP_DARK -> R.string.bishop_dark
-        PieceType.KNIGHT_DARK -> R.string.knight_dark
-        PieceType.PAWN_DARK -> R.string.pawn_dark
-    }
