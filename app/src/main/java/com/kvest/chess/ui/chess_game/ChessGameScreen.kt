@@ -25,13 +25,20 @@ fun ChessGameScreen(
 ) {
     val game by chessGameViewModel.uiState.collectAsStateWithLifecycle()
 
-    ChessGameScreen(game, chessGameViewModel::onCellClicked)
+    ChessGameScreen(
+        game = game,
+        onSquareClicked = chessGameViewModel::onSquareClicked,
+        onTakePiece = chessGameViewModel::onTakePiece,
+        onReleasePiece = chessGameViewModel::onReleasePiece,
+    )
 }
 
 @Composable
 fun ChessGameScreen(
     game: ChessGameUIState,
-    onCellClicked: (Square) -> Unit
+    onSquareClicked: (Square) -> Unit,
+    onTakePiece: (Square) -> Unit,
+    onReleasePiece: (Square) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -44,7 +51,9 @@ fun ChessGameScreen(
             selectedSquare = game.selectedSquare,
             squaresForMove = game.squaresForMove,
             squareSize = dimensionResource(R.dimen.square_size),
-            onCellClicked = onCellClicked,
+            onSquareClicked = onSquareClicked,
+            onTakePiece = onTakePiece,
+            onReleasePiece = onReleasePiece,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
         GameHistory(

@@ -41,7 +41,7 @@ class ChessGameViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            //Init board on Default dispatcher
+            // Init board on Default dispatcher
             withContext(Dispatchers.Default) {
                 board.toString()
             }
@@ -50,7 +50,7 @@ class ChessGameViewModel : ViewModel() {
         }
     }
 
-    fun onCellClicked(square: Square) {
+    fun onSquareClicked(square: Square) {
         if (board.getPiece(square).pieceSide == board.sideToMove) {
             selectedCell = square
         } else {
@@ -63,6 +63,27 @@ class ChessGameViewModel : ViewModel() {
 
             selectedCell = null
         }
+
+        emitCurrentUI()
+    }
+
+    fun onTakePiece(square: Square) {
+        if (board.getPiece(square).pieceSide == board.sideToMove) {
+            selectedCell = square
+
+            emitCurrentUI()
+        }
+    }
+
+    fun onReleasePiece(square: Square) {
+        val move = Move(selectedCell, square)
+        val canDoMove = move in board.legalMoves()
+
+        if (canDoMove) {
+            board.doMove(move)
+        }
+
+        selectedCell = null
 
         emitCurrentUI()
     }
@@ -92,12 +113,10 @@ class ChessGameViewModel : ViewModel() {
                 history = currentHistory.toImmutableList()
             )
         }
-
     }
 
-
     private fun calculatePiecesOnSquares(pieces: List<PieceOnSquare>): List<PieceOnSquare> {
-        //initial calculation
+        // initial calculation
         if (pieces.isEmpty()) {
             return Square.values()
                 .mapNotNull { square ->
@@ -111,7 +130,7 @@ class ChessGameViewModel : ViewModel() {
         val notAddedPieces = mutableMapOf<Square, PieceType>()
 
         return buildList {
-            //Add all not moved pieces to the list and create the map of pieces that were not found on the old squares
+            // Add all not moved pieces to the list and create the map of pieces that were not found on the old squares
             Square.values()
                 .forEach { square ->
                     val pieceType = board.getPiece(square).toPieceType()
@@ -128,12 +147,12 @@ class ChessGameViewModel : ViewModel() {
                     }
                 }
 
-                notAddedPieces.forEach { (square, pieceType) ->
-                    val id = oldPiecesMap.values.find { it.pieceType == pieceType }?.id
-                    requireNotNull(id) //TODO - will crash in case of promotion
+            notAddedPieces.forEach { (square, pieceType) ->
+                val id = oldPiecesMap.values.find { it.pieceType == pieceType }?.id
+                requireNotNull(id) // TODO - will crash in case of promotion
 
-                    add(PieceOnSquare(id, pieceType, square))
-                }
+                add(PieceOnSquare(id, pieceType, square))
+            }
         }
     }
 }
