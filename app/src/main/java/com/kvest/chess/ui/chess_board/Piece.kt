@@ -22,13 +22,17 @@ import kotlin.math.roundToInt
 private const val Z_INDEX_IDLE = 0f
 private const val Z_INDEX_DRAGGING = 1f
 
+interface PieceListener {
+    fun onTakePiece(square: Square)
+    fun onReleasePiece(square: Square)
+}
+
 @Composable
 fun Piece(
     piece: PieceOnSquare,
     squareSize: Dp,
     chessBoard: ChessBoard,
-    onTakePiece: (Square) -> Unit,
-    onReleasePiece: (Square) -> Unit,
+    listener: PieceListener,
     modifier: Modifier = Modifier,
 ) {
     val squareSizePx = with(LocalDensity.current) {
@@ -72,13 +76,13 @@ fun Piece(
                             zIndex = Z_INDEX_DRAGGING
 
                             val square = calculateSquare()
-                            onTakePiece(square)
+                            listener.onTakePiece(square)
                         },
                         onDragEnd = {
                             zIndex = Z_INDEX_IDLE
 
                             val square = calculateSquare()
-                            onReleasePiece(square)
+                            listener.onReleasePiece(square)
 
                             /**
                             Note: This is ugly hack. Animate this piece to it's original position

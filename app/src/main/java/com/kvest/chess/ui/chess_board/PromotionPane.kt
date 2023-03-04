@@ -16,11 +16,15 @@ import com.kvest.chess.model.PieceType
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
+fun interface PromotionPaneListener {
+    fun onPromotionPieceTypeSelected(pieceType: PieceType)
+}
+
 @Composable
 fun PromotionPane(
     promotions: ImmutableList<PieceType>,
     cellSize: Dp,
-    onPromotionPieceTypeSelected: (PieceType) -> Unit,
+    listener: PromotionPaneListener,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier) {
@@ -32,7 +36,7 @@ fun PromotionPane(
             PieceImage(
                 pieceType = pieceType,
                 modifier = itemModifier
-                    .clickable { onPromotionPieceTypeSelected(pieceType) }
+                    .clickable { listener.onPromotionPieceTypeSelected(pieceType) }
             )
         }
     }
@@ -49,7 +53,7 @@ fun PromotionPanePreview() {
             PieceType.KNIGHT_LIGHT
         ).toImmutableList(),
         cellSize = 78.dp,
-        onPromotionPieceTypeSelected = {},
+        listener = {},
         modifier = Modifier
             .background(Color.White)
             .border(2.dp, color = Color.DarkGray)

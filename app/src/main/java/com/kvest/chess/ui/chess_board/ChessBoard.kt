@@ -25,6 +25,10 @@ import com.kvest.chess.model.PieceType
 import com.kvest.chess.ui.theme.Copper
 import kotlinx.collections.immutable.*
 
+interface ChessBoardListener : PromotionPaneListener, PieceListener {
+    fun onSquareClicked(square: Square)
+}
+
 @Composable
 fun ChessBoard(
     chessBoard: ChessBoard,
@@ -33,10 +37,7 @@ fun ChessBoard(
     squaresForMove: ImmutableSet<Square>,
     promotions: ImmutableList<PieceType>,
     squareSize: Dp,
-    onSquareClicked: (Square) -> Unit,
-    onTakePiece: (Square) -> Unit,
-    onReleasePiece: (Square) -> Unit,
-    onPromotionPieceTypeSelected: (PieceType) -> Unit,
+    listener: ChessBoardListener,
     modifier: Modifier = Modifier
 ) {
     val squareSizePx = with(LocalDensity.current) {
@@ -61,7 +62,7 @@ fun ChessBoard(
                     val row = (offset.y / squareSizePx).toInt()
                     val column = (offset.x / squareSizePx).toInt()
                     val square = chessBoard[row, column]
-                    onSquareClicked(square)
+                    listener.onSquareClicked(square)
                 }
             }
     ) {
@@ -71,8 +72,7 @@ fun ChessBoard(
                     piece = piece,
                     squareSize = squareSize,
                     chessBoard = chessBoard,
-                    onTakePiece = onTakePiece,
-                    onReleasePiece = onReleasePiece,
+                    listener = listener,
                 )
             }
         }
@@ -81,7 +81,7 @@ fun ChessBoard(
             PromotionPane(
                 promotions = promotions,
                 cellSize = squareSize * 1.75f,
-                onPromotionPieceTypeSelected = onPromotionPieceTypeSelected,
+                listener = listener,
                 modifier = Modifier
                     .background(Color.White)
                     .border(2.dp, color = Color.DarkGray)
@@ -157,9 +157,11 @@ fun ChessBoardPreview() {
         squaresForMove = persistentSetOf(Square.A1, Square.A3, Square.B4, Square.D4, Square.E2),
         promotions = emptyList<PieceType>().toImmutableList(),
         squareSize = 48.dp,
-        onSquareClicked = {},
-        onTakePiece = {},
-        onReleasePiece = {},
-        onPromotionPieceTypeSelected = {},
+        listener = object : ChessBoardListener {
+            override fun onSquareClicked(square: Square) {}
+            override fun onTakePiece(square: Square) {}
+            override fun onReleasePiece(square: Square) {}
+            override fun onPromotionPieceTypeSelected(pieceType: PieceType) {}
+        },
     )
 }

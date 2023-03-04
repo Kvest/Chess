@@ -10,6 +10,7 @@ import com.kvest.chess.ext.toPiece
 import com.kvest.chess.ext.toPieceType
 import com.kvest.chess.model.ChessBoard
 import com.kvest.chess.model.PieceType
+import com.kvest.chess.ui.chess_board.ChessBoardListener
 import com.kvest.chess.ui.chess_board.PieceOnSquare
 import com.kvest.chess.ui.utils.isLongCastleMove
 import com.kvest.chess.ui.utils.isShortCastleMove
@@ -23,7 +24,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ChessGameViewModel : ViewModel() {
+class ChessGameViewModel : ViewModel(), ChessBoardListener {
     private val chessBoard = ChessBoard()
     private val board by lazy { Board() }
     private var selectedCell: Square? = null
@@ -53,7 +54,7 @@ class ChessGameViewModel : ViewModel() {
         }
     }
 
-    fun onSquareClicked(square: Square) {
+    override fun onSquareClicked(square: Square) {
         if (board.getPiece(square).pieceSide == board.sideToMove) {
             selectedCell = square
         } else {
@@ -63,7 +64,7 @@ class ChessGameViewModel : ViewModel() {
         emitCurrentUI()
     }
 
-    fun onTakePiece(square: Square) {
+    override fun onTakePiece(square: Square) {
         if (board.getPiece(square).pieceSide == board.sideToMove) {
             selectedCell = square
 
@@ -71,7 +72,7 @@ class ChessGameViewModel : ViewModel() {
         }
     }
 
-    fun onReleasePiece(square: Square) {
+    override fun onReleasePiece(square: Square) {
         doMoveIfCan(square)
         emitCurrentUI()
     }
@@ -91,7 +92,7 @@ class ChessGameViewModel : ViewModel() {
         selectedCell = null
     }
 
-    fun onPromotionPieceTypeSelected(pieceType: PieceType) {
+    override fun onPromotionPieceTypeSelected(pieceType: PieceType) {
         val promotionPiece = pieceType.toPiece()
         val move = promotionMoves.find { it.promotion == promotionPiece }
         requireNotNull(move)
