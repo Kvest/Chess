@@ -28,7 +28,8 @@ fun Piece(
     squareSize: Dp,
     chessBoard: ChessBoard,
     onTakePiece: (Square) -> Unit,
-    onReleasePiece: (Square) -> Unit
+    onReleasePiece: (Square) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val squareSizePx = with(LocalDensity.current) {
         squareSize.toPx()
@@ -60,7 +61,7 @@ fun Piece(
 
     PieceImage(
         pieceType = piece.pieceType,
-        modifier = Modifier
+        modifier = modifier
             .offset { offset.value.toIntOffset() }
             .zIndex(zIndex)
             .size(squareSize)

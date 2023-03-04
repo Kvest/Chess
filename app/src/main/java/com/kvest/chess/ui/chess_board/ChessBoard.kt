@@ -1,11 +1,13 @@
 package com.kvest.chess.ui.chess_board
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -21,10 +23,7 @@ import com.github.bhlangonijr.chesslib.Square
 import com.kvest.chess.model.ChessBoard
 import com.kvest.chess.model.PieceType
 import com.kvest.chess.ui.theme.Copper
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableSet
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.*
 
 @Composable
 fun ChessBoard(
@@ -32,10 +31,12 @@ fun ChessBoard(
     pieces: ImmutableList<PieceOnSquare>,
     selectedSquare: Square?,
     squaresForMove: ImmutableSet<Square>,
+    promotions: ImmutableList<PieceType>,
     squareSize: Dp,
     onSquareClicked: (Square) -> Unit,
     onTakePiece: (Square) -> Unit,
     onReleasePiece: (Square) -> Unit,
+    onPromotionPieceTypeSelected: (PieceType) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val squareSizePx = with(LocalDensity.current) {
@@ -74,6 +75,18 @@ fun ChessBoard(
                     onReleasePiece = onReleasePiece,
                 )
             }
+        }
+
+        if (promotions.isNotEmpty()) {
+            PromotionPane(
+                promotions = promotions,
+                cellSize = squareSize * 1.75f,
+                onPromotionPieceTypeSelected = onPromotionPieceTypeSelected,
+                modifier = Modifier
+                    .background(Color.White)
+                    .border(2.dp, color = Color.DarkGray)
+                    .align(Alignment.Center)
+            )
         }
     }
 }
@@ -142,9 +155,11 @@ fun ChessBoardPreview() {
         ),
         selectedSquare = Square.C2,
         squaresForMove = persistentSetOf(Square.A1, Square.A3, Square.B4, Square.D4, Square.E2),
+        promotions = emptyList<PieceType>().toImmutableList(),
         squareSize = 48.dp,
         onSquareClicked = {},
         onTakePiece = {},
         onReleasePiece = {},
+        onPromotionPieceTypeSelected = {},
     )
 }

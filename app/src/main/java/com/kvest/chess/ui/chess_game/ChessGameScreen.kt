@@ -30,6 +30,7 @@ fun ChessGameScreen(
         onSquareClicked = chessGameViewModel::onSquareClicked,
         onTakePiece = chessGameViewModel::onTakePiece,
         onReleasePiece = chessGameViewModel::onReleasePiece,
+        onPromotionPieceTypeSelected = chessGameViewModel::onPromotionPieceTypeSelected,
     )
 }
 
@@ -39,6 +40,7 @@ fun ChessGameScreen(
     onSquareClicked: (Square) -> Unit,
     onTakePiece: (Square) -> Unit,
     onReleasePiece: (Square) -> Unit,
+    onPromotionPieceTypeSelected: (PieceType) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -50,10 +52,12 @@ fun ChessGameScreen(
             pieces = game.pieces,
             selectedSquare = game.selectedSquare,
             squaresForMove = game.squaresForMove,
+            promotions = game.promotions,
             squareSize = dimensionResource(R.dimen.square_size),
             onSquareClicked = onSquareClicked,
             onTakePiece = onTakePiece,
             onReleasePiece = onReleasePiece,
+            onPromotionPieceTypeSelected = onPromotionPieceTypeSelected,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
         GameHistory(

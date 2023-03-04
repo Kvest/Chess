@@ -2,6 +2,7 @@ package com.kvest.chess.ui.chess_game
 
 import com.github.bhlangonijr.chesslib.Square
 import com.kvest.chess.model.ChessBoard
+import com.kvest.chess.model.PieceType
 import com.kvest.chess.ui.chess_board.PieceOnSquare
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
@@ -11,5 +12,6 @@ data class ChessGameUIState(
     val pieces: ImmutableList<PieceOnSquare>,
     val selectedSquare: Square?,
     val squaresForMove: ImmutableSet<Square>,
+    val promotions: ImmutableList<PieceType>,
     val history: ImmutableList<String>
 )
