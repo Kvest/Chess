@@ -36,6 +36,7 @@ fun Piece(
     squareSize: Dp,
     chessBoard: ChessBoard,
     listener: PieceListener,
+    dragPieceOverSquareListener: (Square) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val squareSizePx = with(LocalDensity.current) {
@@ -88,6 +89,8 @@ fun Piece(
                             zIndex = Z_INDEX_IDLE
                             scale = SCALE_IDLE
 
+                            dragPieceOverSquareListener(Square.NONE)
+
                             val square = calculateSquare()
                             listener.onReleasePiece(square)
 
@@ -118,6 +121,8 @@ fun Piece(
                             zIndex = Z_INDEX_IDLE
                             scale = SCALE_IDLE
 
+                            dragPieceOverSquareListener(Square.NONE)
+
                             // Just move piece to it's original position
                             launch {
                                 offset.animateTo(Offset(x, y))
@@ -125,6 +130,8 @@ fun Piece(
                         }
                     ) { change, dragAmount ->
                         change.consume()
+
+                        dragPieceOverSquareListener(calculateSquare())
 
                         launch {
                             offset.snapTo(

@@ -5,9 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.key
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -46,6 +44,9 @@ fun ChessBoard(
         squareSize.toPx()
     }
 
+    var dragOverSquare by remember { mutableStateOf(Square.NONE) }
+    val dragPieceOverSquareListener: (Square) -> Unit = { dragOverSquare = it }
+
     Box(
         modifier = modifier
             .size(squareSize * 8)
@@ -56,6 +57,7 @@ fun ChessBoard(
                     drawSquares(chessBoard, squareSizePx, size)
                     drawSelectedSquare(chessBoard, selectedSquare, squareSizePx, size)
                     drawSquaresForPossibleMoves(chessBoard, squaresForMove, squareSizePx)
+                    drawDragOverSquare(chessBoard, dragOverSquare, squareSizePx)
                 }
             }
             .border(2.dp, color = Color.Black)
@@ -74,6 +76,7 @@ fun ChessBoard(
                     piece = piece,
                     squareSize = squareSize,
                     chessBoard = chessBoard,
+                    dragPieceOverSquareListener = dragPieceOverSquareListener,
                     listener = listener,
                 )
             }
@@ -141,6 +144,28 @@ private fun DrawScope.drawSquaresForPossibleMoves(
             radius = (squareSizePx) / 3
         )
     }
+}
+
+private fun DrawScope.drawDragOverSquare(
+    chessBoard: ChessBoard,
+    square: Square,
+    squareSizePx: Float,
+) {
+    if (square == Square.NONE) {
+        return
+    }
+
+    val row = chessBoard.getRow(square)
+    val column = chessBoard.getColumn(square)
+
+    drawCircle(
+        color = Color.Black.copy(alpha = 0.3f),
+        center = Offset(
+            x = column * squareSizePx + squareSizePx / 2,
+            y = row * squareSizePx + squareSizePx / 2
+        ),
+        radius = (squareSizePx) / 1.4f
+    )
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFF0000FF)
