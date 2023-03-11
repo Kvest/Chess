@@ -11,15 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.kvest.chess.model.*
 import com.kvest.chess.ui.chess_board.ChessBoard
 import com.kvest.chess.ui.chess_board.ChessBoardListener
 import com.kvest.chess.ui.game_history.GameHistory
 
-@OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
 fun ChessGameScreen(
     chessGameViewModel: ChessGameViewModel = viewModel()

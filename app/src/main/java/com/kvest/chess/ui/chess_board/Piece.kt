@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -17,11 +18,13 @@ import com.kvest.chess.model.ChessBoard
 import com.kvest.chess.ui.utils.toIntOffset
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 private const val Z_INDEX_IDLE = 0f
 private const val Z_INDEX_DRAGGING = 1f
+private const val SCALE_IDLE = 1f
+private const val SCALE_DRAGGING = 1.5f
 
+@Stable
 interface PieceListener {
     fun onTakePiece(square: Square)
     fun onReleasePiece(square: Square)
@@ -45,6 +48,7 @@ fun Piece(
     val x by rememberUpdatedState(column * squareSizePx)
     val y by rememberUpdatedState(row * squareSizePx)
     var zIndex by remember { mutableStateOf(Z_INDEX_IDLE) }
+    var scale by remember { mutableStateOf(SCALE_IDLE) }
 
     val offset = remember {
         Animatable(
@@ -59,7 +63,7 @@ fun Piece(
         return chessBoard[row, column]
     }
 
-    LaunchedEffect(key1 = x.roundToInt(), key2 = y.roundToInt()) {
+    LaunchedEffect(key1 = piece.square) {
         offset.animateTo(Offset(x, y))
     }
 
@@ -68,18 +72,21 @@ fun Piece(
         modifier = modifier
             .offset { offset.value.toIntOffset() }
             .zIndex(zIndex)
+            .scale(scale)
             .size(squareSize)
             .pointerInput(Unit) {
                 coroutineScope {
                     detectDragGestures(
                         onDragStart = {
                             zIndex = Z_INDEX_DRAGGING
+                            scale = SCALE_DRAGGING
 
                             val square = calculateSquare()
                             listener.onTakePiece(square)
                         },
                         onDragEnd = {
                             zIndex = Z_INDEX_IDLE
+                            scale = SCALE_IDLE
 
                             val square = calculateSquare()
                             listener.onReleasePiece(square)
@@ -109,6 +116,7 @@ fun Piece(
                         },
                         onDragCancel = {
                             zIndex = Z_INDEX_IDLE
+                            scale = SCALE_IDLE
 
                             // Just move piece to it's original position
                             launch {
@@ -121,8 +129,8 @@ fun Piece(
                         launch {
                             offset.snapTo(
                                 Offset(
-                                    x = offset.value.x + dragAmount.x,
-                                    y = offset.value.y + dragAmount.y,
+                                    x = offset.value.x + dragAmount.x * scale,
+                                    y = offset.value.y + dragAmount.y * scale,
                                 )
                             )
                         }
